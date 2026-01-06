@@ -45,7 +45,6 @@ const getIndicatorsForProduct = (product: Product): Record<Sector, Indicator[]> 
       { id: 'r3', name: "Reversão de Cancelamentos", type: "numerico" },
       { id: 'r4', name: "Cancelamentos", type: "numerico" },
       { id: 'r5', name: "MRR Cancelado (R$)", type: "moeda" },
-      { id: 'r6', name: "MRR Cancelado Automático (R$)", type: "moeda" },
       { id: 'r7', name: "Cancelamento Automático", type: "numerico" }
     ]
   };
