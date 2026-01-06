@@ -18,7 +18,6 @@ const Dashboard: React.FC<DashboardProps> = ({ monthData, currentMonth, indicato
       cancelados: 0,
       mrrCancelado: 0,
       canceladoAuto: 0,
-      mrrAuto: 0,
       revertidos: 0
     });
 
@@ -34,8 +33,7 @@ const Dashboard: React.FC<DashboardProps> = ({ monthData, currentMonth, indicato
           metrics[p].solicitacoes += dayData['Solicitações de Cancelamento'] || 0;
           metrics[p].cancelados += dayData['Cancelados'] || 0;
           metrics[p].mrrCancelado += dayData['MRR Cancelado (R$)'] || 0;
-          metrics[p].canceladoAuto += dayData['MRR Cancelado Automático (R$)'] || 0;
-          metrics[p].mrrAuto += dayData['MRR Cancelado Automático (R$)'] || 0;
+          metrics[p].canceladoAuto += dayData['Cancelamento Automático'] || 0;
           metrics[p].revertidos += dayData['Reversão de Cancelamentos'] || dayData['Revertidos'] || 0;
         });
       });
@@ -48,7 +46,7 @@ const Dashboard: React.FC<DashboardProps> = ({ monthData, currentMonth, indicato
   }, [monthData]);
 
   const renderProductSection = (name: string, productId: Product, data: any, primaryColor: string, icon: string) => {
-    const totalLoss = data.mrrCancelado + data.mrrAuto;
+    const totalLoss = data.mrrCancelado;
     const target = LOSS_TARGETS[productId];
     const percentage = target > 0 ? (totalLoss / target) * 100 : 0;
     const isOverTarget = totalLoss > target;
@@ -59,7 +57,6 @@ const Dashboard: React.FC<DashboardProps> = ({ monthData, currentMonth, indicato
       { label: 'Cancelados', value: data.cancelados, icon: 'fa-user-minus' },
       { label: 'MRR Perda Total', value: `R$ ${totalLoss.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: 'fa-money-bill-wave', highlight: isOverTarget },
       { label: 'Cancelamento Auto', value: data.canceladoAuto, icon: 'fa-robot' },
-      { label: 'MRR Auto', value: `R$ ${data.mrrAuto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: 'fa-coins' },
       { label: 'Revertidos', value: data.revertidos, icon: 'fa-undo' },
     ];
 
@@ -94,7 +91,7 @@ const Dashboard: React.FC<DashboardProps> = ({ monthData, currentMonth, indicato
           </div>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {cards.map((card, i) => (
             <div key={i} className={`bg-white p-5 rounded-2xl shadow-sm border ${card.highlight ? 'border-rose-200 bg-rose-50/30' : 'border-slate-100'} flex flex-col justify-between hover:border-slate-300 transition-all group`}>
               <div className="flex items-center justify-between mb-3">
@@ -111,10 +108,10 @@ const Dashboard: React.FC<DashboardProps> = ({ monthData, currentMonth, indicato
 
   const trendData = useMemo(() => {
     return [
-      { name: 'Semana 1', sittax: (productMetrics.sittax.mrrCancelado + productMetrics.sittax.mrrAuto) * 0.2, openix: (productMetrics.openix.mrrCancelado + productMetrics.openix.mrrAuto) * 0.15 },
-      { name: 'Semana 2', sittax: (productMetrics.sittax.mrrCancelado + productMetrics.sittax.mrrAuto) * 0.5, openix: (productMetrics.openix.mrrCancelado + productMetrics.openix.mrrAuto) * 0.4 },
-      { name: 'Semana 3', sittax: (productMetrics.sittax.mrrCancelado + productMetrics.sittax.mrrAuto) * 0.8, openix: (productMetrics.openix.mrrCancelado + productMetrics.openix.mrrAuto) * 0.85 },
-      { name: 'Atual', sittax: (productMetrics.sittax.mrrCancelado + productMetrics.sittax.mrrAuto), openix: (productMetrics.openix.mrrCancelado + productMetrics.openix.mrrAuto) },
+      { name: 'Semana 1', sittax: (productMetrics.sittax.mrrCancelado) * 0.2, openix: (productMetrics.openix.mrrCancelado) * 0.15 },
+      { name: 'Semana 2', sittax: (productMetrics.sittax.mrrCancelado) * 0.5, openix: (productMetrics.openix.mrrCancelado) * 0.4 },
+      { name: 'Semana 3', sittax: (productMetrics.sittax.mrrCancelado) * 0.8, openix: (productMetrics.openix.mrrCancelado) * 0.85 },
+      { name: 'Atual', sittax: (productMetrics.sittax.mrrCancelado), openix: (productMetrics.openix.mrrCancelado) },
     ];
   }, [productMetrics]);
 
@@ -132,7 +129,7 @@ const Dashboard: React.FC<DashboardProps> = ({ monthData, currentMonth, indicato
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
           {(['sittax', 'openix'] as Product[]).map(p => {
-             const total = productMetrics[p].mrrCancelado + productMetrics[p].mrrAuto;
+             const total = productMetrics[p].mrrCancelado;
              const target = LOSS_TARGETS[p];
              const isOver = total > target;
              const colors = {
