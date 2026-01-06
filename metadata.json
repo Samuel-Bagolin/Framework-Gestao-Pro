@@ -1,0 +1,8 @@
+{
+  "name": "Framework Gestão Pro",
+  "description": "Uma plataforma avançada de gestão de KPIs e dashboards para monitoramento de performance entre Sittax e Acessorias, integrada com Firebase e insights gerados por IA.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
