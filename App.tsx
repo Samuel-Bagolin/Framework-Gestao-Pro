@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product, Sector, MonthData, MonthOption, IndicatorConfig, Indicator } from './types';
 import { PRODUCTS, SECTORS, INITIAL_INDICATORS } from './constants';
-import { syncData, saveData } from './services/firebase';
+import { syncData, updateData } from './services/firebase';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import SectorTable from './components/SectorTable';
@@ -24,17 +24,21 @@ const App: React.FC = () => {
   useEffect(() => {
     const months: MonthOption[] = [];
     const now = new Date();
-    for (let i = 0; i < 12; i++) {
+    // Gerar 24 meses (12 passados e 12 futuros para facilitar testes como o de 2026)
+    for (let i = -12; i < 12; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
       const name = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
       months.push({ key, name });
     }
+    // Ordenar para o mais recente primeiro (baseado na data atual)
+    months.sort((a, b) => b.key.localeCompare(a.key));
     setAvailableMonths(months);
-    setCurrentMonth(months[0].key);
+    
+    const currentKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+    setCurrentMonth(currentKey);
   }, []);
 
-  // Sync Data
   useEffect(() => {
     if (!currentMonth) return;
     const unsubData = syncData(`frameworkGestao/${currentMonth}`, (data) => {
@@ -43,13 +47,13 @@ const App: React.FC = () => {
           sittax: data.sittax || {},
           openix: data.openix || {}
         });
+      } else {
+        setMonthData({ sittax: {}, openix: {} });
       }
-      else setMonthData({ sittax: {}, openix: {} });
     });
     return () => unsubData();
   }, [currentMonth]);
 
-  // Sync Config
   useEffect(() => {
     const unsubConfig = syncData(`config/indicators`, (data) => {
       if (data) setIndicatorConfig(data);
@@ -58,20 +62,29 @@ const App: React.FC = () => {
   }, []);
 
   const handleSaveData = async (product: Product, sector: Sector, date: string, indicators: any) => {
-    const updatedData = { ...monthData };
-    if (!updatedData[product]) updatedData[product] = {};
-    if (!updatedData[product][sector]) updatedData[product][sector] = {};
-    updatedData[product][sector][date] = indicators;
-    await saveData(`frameworkGestao/${currentMonth}`, updatedData);
-    setIsModalOpen(false);
+    try {
+      const dateObj = new Date(date + 'T12:00:00');
+      const dateMonthKey = `${dateObj.getFullYear()}-${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
+      
+      // Salva apenas no nó específico da data para não apagar outros dias
+      await updateData(`frameworkGestao/${dateMonthKey}/${product}/${sector}/${date}`, indicators);
+      
+      // Se salvou em um mês diferente do atual, muda o filtro para o usuário ver o dado
+      if (dateMonthKey !== currentMonth) {
+        setCurrentMonth(dateMonthKey);
+      }
+      
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+      alert("Erro ao salvar dados no Firebase. Verifique sua conexão.");
+    }
   };
 
   const handleUpdateCellValue = async (product: Product, sector: Sector, date: string, indicatorName: string, value: number) => {
-    const updatedData = { ...monthData };
-    if (!updatedData[product][sector]) updatedData[product][sector] = {};
-    if (!updatedData[product][sector][date]) updatedData[product][sector][date] = {};
-    updatedData[product][sector][date][indicatorName] = value;
-    await saveData(`frameworkGestao/${currentMonth}`, updatedData);
+    const dateObj = new Date(date + 'T12:00:00');
+    const dateMonthKey = `${dateObj.getFullYear()}-${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
+    await updateData(`frameworkGestao/${dateMonthKey}/${product}/${sector}/${date}`, { [indicatorName]: value });
   };
 
   const handleAddIndicator = async (product: Product, sector: Sector, name: string) => {
@@ -81,16 +94,15 @@ const App: React.FC = () => {
       name,
       type: 'numerico'
     };
+    if (!newConfig[product]) newConfig[product] = INITIAL_INDICATORS[product];
     newConfig[product][sector].push(newIndicator);
-    setIndicatorConfig(newConfig);
-    await saveData(`config/indicators`, newConfig);
+    await updateData(`config/indicators/${product}/${sector}`, newConfig[product][sector]);
   };
 
   const handleDeleteIndicator = async (product: Product, sector: Sector, id: string) => {
     const newConfig = { ...indicatorConfig };
     newConfig[product][sector] = newConfig[product][sector].filter(i => i.id !== id);
-    setIndicatorConfig(newConfig);
-    await saveData(`config/indicators`, newConfig);
+    await updateData(`config/indicators/${product}/${sector}`, newConfig[product][sector]);
   };
 
   return (
@@ -101,7 +113,7 @@ const App: React.FC = () => {
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Framework Gestão Pro</h1>
-            <p className="text-slate-500 text-sm">Controle de KPIs e Retenção</p>
+            <p className="text-slate-500 text-sm">Monitoramento Estratégico Sittax & Openix</p>
           </div>
           
           <div className="flex items-center gap-3">
@@ -111,7 +123,7 @@ const App: React.FC = () => {
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg flex items-center gap-2"
             >
               <i className="fas fa-plus"></i>
-              <span>Lançar Dados</span>
+              <span>Lançar Registro</span>
             </button>
           </div>
         </header>
