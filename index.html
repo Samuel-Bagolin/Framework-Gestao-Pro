@@ -32,6 +32,34 @@
             border: 1px solid #3b82f6; 
             border-radius: 4px;
         }
+        .sector-tab {
+            transition: all 0.3s ease;
+        }
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .day-cell {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .day-cell:hover {
+            background-color: #f3f4f6;
+        }
+        .day-cell.selected {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .day-cell.has-data {
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -121,6 +149,10 @@
             <!-- Content Areas -->
             <div id="dashboard-content" class="space-y-12 pb-10">
                 <!-- Dashboard content will be loaded here -->
+                <div class="text-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                    <p class="text-slate-500">Carregando dashboard...</p>
+                </div>
             </div>
 
             <div id="sittax-content" class="space-y-6 hidden">
@@ -134,6 +166,10 @@
                 </div>
                 <div id="sittax-table">
                     <!-- Table will be populated by JavaScript -->
+                    <div class="text-center py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mx-auto mb-4"></div>
+                        <p class="text-slate-500">Carregando dados Sittax...</p>
+                    </div>
                 </div>
             </div>
 
@@ -148,26 +184,38 @@
                 </div>
                 <div id="openix-table">
                     <!-- Table will be populated by JavaScript -->
+                    <div class="text-center py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+                        <p class="text-slate-500">Carregando dados Openix...</p>
+                    </div>
                 </div>
             </div>
 
             <div id="comparativo-content" class="hidden">
                 <!-- Comparative content will be loaded here -->
+                <div class="text-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                    <p class="text-slate-500">Carregando comparativo...</p>
+                </div>
             </div>
         </main>
     </div>
 
     <!-- Data Entry Modal -->
     <div id="data-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col animate-in max-h-[90vh]">
             <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-white">
                 <h2 class="text-xl font-bold text-slate-800">Lançamento de Registro</h2>
                 <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-2 transition-colors">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            <div class="p-8 overflow-y-auto max-h-[75vh]" id="modal-form">
+            <div class="p-8 overflow-y-auto" id="modal-form">
                 <!-- Form will be populated by JavaScript -->
+                <div class="text-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                    <p class="text-slate-500">Carregando formulário...</p>
+                </div>
             </div>
             <div class="p-8 bg-slate-50/50 border-t border-slate-100 flex justify-end items-center gap-6">
                 <button onclick="closeModal()" class="text-sm font-bold text-slate-500 hover:text-slate-700 transition">
@@ -212,6 +260,146 @@
         const SECTORS = ['agendamento', 'suporte', 'onboarding', 'ongoing', 'retencao'];
         const LOSS_TARGETS = { sittax: 15499.20, openix: 8078.40 };
 
+        // Configuração completa dos indicadores (incluindo os da imagem)
+        const DEFAULT_INDICATOR_CONFIG = {
+            sittax: {
+                agendamento: [
+                    { id: 'a1', name: "Solicitações de Cancelamento", type: "numerico" },
+                    { id: 'a2', name: "Cancelados", type: "numerico" },
+                    { id: 'a3', name: "MBR Cancelado (R$)", type: "monetario" },
+                    { id: 'a4', name: "Cancelamento Automático", type: "numerico" },
+                    { id: 'a5', name: "MBR Cancelado Automático (R$)", type: "monetario" },
+                    { id: 'a6', name: "Reversões", type: "numerico" },
+                    { id: 'a7', name: "Reuniões Realizadas", type: "numerico" },
+                    { id: 'a8', name: "Reversão de Cancelamentos", type: "numerico" },
+                    { id: 'a9', name: "Cancelamentos", type: "numerico" }
+                ],
+                suporte: [
+                    { id: 's1', name: "CSAT", type: "percentual" },
+                    { id: 's2', name: "Tempo de Espera - WhatsApp", type: "tempo" },
+                    { id: 's3', name: "Notas Detratoras (%)", type: "percentual" },
+                    { id: 's4', name: "Taxa de Inatividade (%)", type: "percentual" },
+                    { id: 's5', name: "Solicitações de Cancelamento", type: "numerico" },
+                    { id: 's6', name: "Cancelados", type: "numerico" },
+                    { id: 's7', name: "MBR Cancelado (R$)", type: "monetario" },
+                    { id: 's8', name: "Cancelamento Automático", type: "numerico" },
+                    { id: 's9', name: "MBR Cancelado Automático (R$)", type: "monetario" },
+                    { id: 's10', name: "Reversões", type: "numerico" },
+                    { id: 's11', name: "Reuniões Realizadas", type: "numerico" },
+                    { id: 's12', name: "Reversão de Cancelamentos", type: "numerico" },
+                    { id: 's13', name: "Cancelamentos", type: "numerico" }
+                ],
+                onboarding: [
+                    { id: 'o1', name: "Quantidades de Clientes", type: "numerico" },
+                    { id: 'o2', name: "Quantidades de Reuniões", type: "numerico" },
+                    { id: 'o3', name: "CSAT", type: "percentual" },
+                    { id: 'o4', name: "Migração Sittax", type: "numerico" },
+                    { id: 'o5', name: "Solicitações de Cancelamento", type: "numerico" },
+                    { id: 'o6', name: "Cancelamentos", type: "numerico" },
+                    { id: 'o7', name: "Quantidade de Inadimplente", type: "numerico" },
+                    { id: 'o8', name: "MBR Cancelado (R$)", type: "monetario" },
+                    { id: 'o9', name: "Cancelamento Automático", type: "numerico" },
+                    { id: 'o10', name: "MBR Cancelado Automático (R$)", type: "monetario" },
+                    { id: 'o11', name: "Reversões", type: "numerico" },
+                    { id: 'o12', name: "Reuniões Realizadas", type: "numerico" },
+                    { id: 'o13', name: "Reversão de Cancelamentos", type: "numerico" }
+                ],
+                ongoing: [
+                    { id: 'g1', name: "Quantidades de Clientes", type: "numerico" },
+                    { id: 'g2', name: "Quantidades de contatos efetivos", type: "numerico" },
+                    { id: 'g3', name: "CSAT", type: "percentual" },
+                    { id: 'g4', name: "Solicitações de Cancelamento", type: "numerico" },
+                    { id: 'g5', name: "Cancelamentos", type: "numerico" },
+                    { id: 'g6', name: "Quantidade de Inadimplente", type: "numerico" },
+                    { id: 'g7', name: "MBR Cancelado (R$)", type: "monetario" },
+                    { id: 'g8', name: "Cancelamento Automático", type: "numerico" },
+                    { id: 'g9', name: "MBR Cancelado Automático (R$)", type: "monetario" },
+                    { id: 'g10', name: "Reversões", type: "numerico" },
+                    { id: 'g11', name: "Reuniões Realizadas", type: "numerico" },
+                    { id: 'g12', name: "Reversão de Cancelamentos", type: "numerico" }
+                ],
+                retencao: [
+                    { id: 'r1', name: "Solicitações de Cancelamento", type: "numerico" },
+                    { id: 'r2', name: "Cancelados", type: "numerico" },
+                    { id: 'r3', name: "MBR Cancelado (R$)", type: "monetario" },
+                    { id: 'r4', name: "Cancelamento Automático", type: "numerico" },
+                    { id: 'r5', name: "MBR Cancelado Automático (R$)", type: "monetario" },
+                    { id: 'r6', name: "Reversões", type: "numerico" },
+                    { id: 'r7', name: "Reuniões Realizadas", type: "numerico" },
+                    { id: 'r8', name: "Reversão de Cancelamentos", type: "numerico" },
+                    { id: 'r9', name: "Cancelamentos", type: "numerico" }
+                ]
+            },
+            openix: {
+                agendamento: [
+                    { id: 'a1', name: "Solicitações de Cancelamento", type: "numerico" },
+                    { id: 'a2', name: "Cancelados", type: "numerico" },
+                    { id: 'a3', name: "MBR Cancelado (R$)", type: "monetario" },
+                    { id: 'a4', name: "Cancelamento Automático", type: "numerico" },
+                    { id: 'a5', name: "MBR Cancelado Automático (R$)", type: "monetario" },
+                    { id: 'a6', name: "Reversões", type: "numerico" },
+                    { id: 'a7', name: "Reuniões Realizadas", type: "numerico" },
+                    { id: 'a8', name: "Reversão de Cancelamentos", type: "numerico" },
+                    { id: 'a9', name: "Cancelamentos", type: "numerico" }
+                ],
+                suporte: [
+                    { id: 's1', name: "CSAT", type: "percentual" },
+                    { id: 's2', name: "Tempo de Espera - WhatsApp", type: "tempo" },
+                    { id: 's3', name: "Notas Detratoras (%)", type: "percentual" },
+                    { id: 's4', name: "Taxa de Inatividade (%)", type: "percentual" },
+                    { id: 's5', name: "Solicitações de Cancelamento", type: "numerico" },
+                    { id: 's6', name: "Cancelados", type: "numerico" },
+                    { id: 's7', name: "MBR Cancelado (R$)", type: "monetario" },
+                    { id: 's8', name: "Cancelamento Automático", type: "numerico" },
+                    { id: 's9', name: "MBR Cancelado Automático (R$)", type: "monetario" },
+                    { id: 's10', name: "Reversões", type: "numerico" },
+                    { id: 's11', name: "Reuniões Realizadas", type: "numerico" },
+                    { id: 's12', name: "Reversão de Cancelamentos", type: "numerico" },
+                    { id: 's13', name: "Cancelamentos", type: "numerico" }
+                ],
+                onboarding: [
+                    { id: 'o1', name: "Quantidades de Clientes", type: "numerico" },
+                    { id: 'o2', name: "Quantidades de Reuniões", type: "numerico" },
+                    { id: 'o3', name: "CSAT", type: "percentual" },
+                    { id: 'o4', name: "Migração Openix", type: "numerico" },
+                    { id: 'o5', name: "Solicitações de Cancelamento", type: "numerico" },
+                    { id: 'o6', name: "Cancelamentos", type: "numerico" },
+                    { id: 'o7', name: "Quantidade de Inadimplente", type: "numerico" },
+                    { id: 'o8', name: "MBR Cancelado (R$)", type: "monetario" },
+                    { id: 'o9', name: "Cancelamento Automático", type: "numerico" },
+                    { id: 'o10', name: "MBR Cancelado Automático (R$)", type: "monetario" },
+                    { id: 'o11', name: "Reversões", type: "numerico" },
+                    { id: 'o12', name: "Reuniões Realizadas", type: "numerico" },
+                    { id: 'o13', name: "Reversão de Cancelamentos", type: "numerico" }
+                ],
+                ongoing: [
+                    { id: 'g1', name: "Quantidades de Clientes", type: "numerico" },
+                    { id: 'g2', name: "Quantidades de contatos efetivos", type: "numerico" },
+                    { id: 'g3', name: "CSAT", type: "percentual" },
+                    { id: 'g4', name: "Solicitações de Cancelamento", type: "numerico" },
+                    { id: 'g5', name: "Cancelamentos", type: "numerico" },
+                    { id: 'g6', name: "Quantidade de Inadimplente", type: "numerico" },
+                    { id: 'g7', name: "MBR Cancelado (R$)", type: "monetario" },
+                    { id: 'g8', name: "Cancelamento Automático", type: "numerico" },
+                    { id: 'g9', name: "MBR Cancelado Automático (R$)", type: "monetario" },
+                    { id: 'g10', name: "Reversões", type: "numerico" },
+                    { id: 'g11', name: "Reuniões Realizadas", type: "numerico" },
+                    { id: 'g12', name: "Reversão de Cancelamentos", type: "numerico" }
+                ],
+                retencao: [
+                    { id: 'r1', name: "Solicitações de Cancelamento", type: "numerico" },
+                    { id: 'r2', name: "Cancelados", type: "numerico" },
+                    { id: 'r3', name: "MBR Cancelado (R$)", type: "monetario" },
+                    { id: 'r4', name: "Cancelamento Automático", type: "numerico" },
+                    { id: 'r5', name: "MBR Cancelado Automático (R$)", type: "monetario" },
+                    { id: 'r6', name: "Reversões", type: "numerico" },
+                    { id: 'r7', name: "Reuniões Realizadas", type: "numerico" },
+                    { id: 'r8', name: "Reversão de Cancelamentos", type: "numerico" },
+                    { id: 'r9', name: "Cancelamentos", type: "numerico" }
+                ]
+            }
+        };
+
         // Estado da aplicação
         const state = {
             activeTab: 'dashboard',
@@ -219,7 +407,7 @@
             activeSectorOpenix: 'retencao',
             currentMonth: '',
             monthData: { sittax: {}, openix: {} },
-            indicatorConfig: {},
+            indicatorConfig: JSON.parse(JSON.stringify(DEFAULT_INDICATOR_CONFIG)),
             availableMonths: [],
             isEditMode: false,
             isEditModeOpenix: false,
@@ -227,6 +415,8 @@
             modalData: {
                 product: 'sittax',
                 sector: 'retencao',
+                year: new Date().getFullYear(),
+                month: new Date().getMonth() + 1,
                 date: new Date().toISOString().split('T')[0],
                 values: {}
             },
@@ -250,10 +440,8 @@
                     showToast("Erro ao carregar dados", "error");
                 });
                 
-                // Armazenar função para cancelar listener
                 const unsubscribe = () => ref.off('value', listener);
                 state.unsubscribeFunctions.push(unsubscribe);
-                
                 return unsubscribe;
             } catch (error) {
                 console.error("❌ Erro na função syncData:", error);
@@ -270,10 +458,28 @@
             
             try {
                 await database.ref(path).update(data);
-                console.log(`✅ Dados atualizados em ${path}:`, data);
+                console.log(`✅ Dados atualizados em ${path}`);
                 return true;
             } catch (error) {
                 console.error("❌ Firebase update error:", error);
+                showToast("Erro ao salvar dados", "error");
+                return false;
+            }
+        }
+
+        async function setData(path, data) {
+            if (!database) {
+                console.error("Database não inicializado");
+                showToast("Sem conexão com o banco de dados", "error");
+                return false;
+            }
+            
+            try {
+                await database.ref(path).set(data);
+                console.log(`✅ Dados definidos em ${path}`);
+                return true;
+            } catch (error) {
+                console.error("❌ Firebase set error:", error);
                 showToast("Erro ao salvar dados", "error");
                 return false;
             }
@@ -288,9 +494,8 @@
         function initializeApp() {
             console.log("🚀 Inicializando aplicação...");
             setupMonthSelector();
-            loadInitialData();
             setupSectorTabs();
-            setActiveTab('dashboard');
+            loadInitialData();
             setupConnectionMonitor();
         }
 
@@ -329,15 +534,12 @@
                 months.push({ key, name });
             }
             
-            // Ordenar do mais recente para o mais antigo
             months.sort((a, b) => b.key.localeCompare(a.key));
             state.availableMonths = months;
             
-            // Definir mês atual
             const currentKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
             state.currentMonth = currentKey;
             
-            // Popular seletor
             const selector = document.getElementById('month-selector');
             selector.innerHTML = months.map(m => 
                 `<option value="${m.key}" ${m.key === currentKey ? 'selected' : ''}>${m.name}</option>`
@@ -345,7 +547,7 @@
             
             selector.addEventListener('change', (e) => {
                 state.currentMonth = e.target.value;
-                cleanupListeners(); // Limpar listeners antigos
+                cleanupListeners();
                 loadMonthData();
                 showToast(`Mês alterado para: ${e.target.options[e.target.selectedIndex].text}`, "info");
             });
@@ -358,7 +560,7 @@
             if (sittaxTabs) {
                 sittaxTabs.innerHTML = SECTORS.map(s => `
                     <button onclick="setActiveSector('${s}', 'sittax')" 
-                        class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap sector-tab-sittax-${s} 
+                        class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap sector-tab sector-tab-sittax-${s} 
                                ${s === state.activeSector ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200/50'}">
                         ${s.charAt(0).toUpperCase() + s.slice(1)}
                     </button>
@@ -368,7 +570,7 @@
             if (openixTabs) {
                 openixTabs.innerHTML = SECTORS.map(s => `
                     <button onclick="setActiveSector('${s}', 'openix')" 
-                        class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap sector-tab-openix-${s} 
+                        class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap sector-tab sector-tab-openix-${s} 
                                ${s === state.activeSectorOpenix ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200/50'}">
                         ${s.charAt(0).toUpperCase() + s.slice(1)}
                     </button>
@@ -380,98 +582,28 @@
         function loadInitialData() {
             console.log("📊 Carregando dados iniciais...");
             
-            // Configuração padrão de indicadores
-            const defaultConfig = {
-                sittax: {
-                    agendamento: [
-                        { id: 'a1', name: "No Show - Onboarding", type: "numerico" },
-                        { id: 'a2', name: "Agendamentos Realizados 1 Etapa", type: "numerico" },
-                        { id: 'a3', name: "SLA - Primeiro contato (Pipedrive)", type: "numerico" }
-                    ],
-                    suporte: [
-                        { id: 's1', name: "CSAT", type: "percentual" },
-                        { id: 's2', name: "Tempo de Espera - WhatsApp", type: "tempo" },
-                        { id: 's3', name: "Notas Detratoras (%)", type: "percentual" },
-                        { id: 's4', name: "Taxa de Inatividade (%)", type: "percentual" }
-                    ],
-                    onboarding: [
-                        { id: 'o1', name: "Quantidades de Clientes", type: "numerico" },
-                        { id: 'o2', name: "Quantidades de Reuniões", type: "numerico" },
-                        { id: 'o3', name: "CSAT", type: "percentual" },
-                        { id: 'o4', name: "Migração Sittax", type: "numerico" },
-                        { id: 'o5', name: "Solicitações de Cancelamento", type: "numerico" },
-                        { id: 'o6', name: "Cancelamentos", type: "numerico" },
-                        { id: 'o7', name: "Quantidade de Inadimplente", type: "numerico" }
-                    ],
-                    ongoing: [
-                        { id: 'g1', name: "Quantidades de Clientes", type: "numerico" },
-                        { id: 'g2', name: "Quantidades de contatos efetivos", type: "numerico" },
-                        { id: 'g3', name: "CSAT", type: "percentual" },
-                        { id: 'g4', name: "Solicitações de Cancelamento", type: "numerico" },
-                        { id: 'g5', name: "Cancelamentos", type: "numerico" },
-                        { id: 'g6', name: "Quantidade de Inadimplente", type: "numerico" }
-                    ],
-                    retencao: [
-                        { id: 'r1', name: "Solicitações de Cancelamento", type: "numerico" },
-                        { id: 'r2', name: "Reuniões Realizadas", type: "numerico" },
-                        { id: 'r3', name: "Reversão de Cancelamentos", type: "numerico" },
-                        { id: 'r4', name: "Cancelamentos", type: "numerico" },
-                        { id: 'r5', name: "MRR Cancelado (R$)", type: "moeda" }
-                    ]
-                },
-                openix: {
-                    agendamento: [
-                        { id: 'a1', name: "No Show - Onboarding", type: "numerico" },
-                        { id: 'a2', name: "Agendamentos Realizados 1 Etapa", type: "numerico" },
-                        { id: 'a3', name: "SLA - Primeiro contato (Pipedrive)", type: "numerico" }
-                    ],
-                    suporte: [
-                        { id: 's1', name: "CSAT", type: "percentual" },
-                        { id: 's2', name: "Tempo de Espera - WhatsApp", type: "tempo" },
-                        { id: 's3', name: "Notas Detratoras (%)", type: "percentual" },
-                        { id: 's4', name: "Taxa de Inatividade (%)", type: "percentual" }
-                    ],
-                    onboarding: [
-                        { id: 'o1', name: "Quantidades de Clientes", type: "numerico" },
-                        { id: 'o2', name: "Quantidades de Reuniões", type: "numerico" },
-                        { id: 'o3', name: "CSAT", type: "percentual" },
-                        { id: 'o4', name: "Migração Openix", type: "numerico" },
-                        { id: 'o5', name: "Solicitações de Cancelamento", type: "numerico" },
-                        { id: 'o6', name: "Cancelamentos", type: "numerico" },
-                        { id: 'o7', name: "Quantidade de Inadimplente", type: "numerico" }
-                    ],
-                    ongoing: [
-                        { id: 'g1', name: "Quantidades de Clientes", type: "numerico" },
-                        { id: 'g2', name: "Quantidades de contatos efetivos", type: "numerico" },
-                        { id: 'g3', name: "CSAT", type: "percentual" },
-                        { id: 'g4', name: "Solicitações de Cancelamento", type: "numerico" },
-                        { id: 'g5', name: "Cancelamentos", type: "numerico" },
-                        { id: 'g6', name: "Quantidade de Inadimplente", type: "numerico" }
-                    ],
-                    retencao: [
-                        { id: 'r1', name: "Solicitações de Cancelamento", type: "numerico" },
-                        { id: 'r2', name: "Reuniões Realizadas", type: "numerico" },
-                        { id: 'r3', name: "Reversão de Cancelamentos", type: "numerico" },
-                        { id: 'r4', name: "Cancelamentos", type: "numerico" },
-                        { id: 'r5', name: "MRR Cancelado (R$)", type: "moeda" }
-                    ]
-                }
-            };
-
-            state.indicatorConfig = defaultConfig;
-            
-            // Tentar carregar configuração do Firebase
+            // Carregar configuração
             syncData('config/indicators', (data) => {
                 if (data) {
-                    state.indicatorConfig = data;
                     console.log("✅ Configuração carregada do Firebase");
+                    state.indicatorConfig = data;
                 } else {
-                    console.log("⚠️ Usando configuração padrão");
-                    // Salvar configuração padrão no Firebase
-                    updateData('config/indicators', defaultConfig);
+                    console.log("⚠️ Nenhuma configuração encontrada, criando padrão...");
+                    createDefaultConfig();
                 }
+                
+                // Carregar dados do mês
                 loadMonthData();
             });
+        }
+
+        async function createDefaultConfig() {
+            console.log("💾 Criando configuração padrão...");
+            const success = await setData('config/indicators', DEFAULT_INDICATOR_CONFIG);
+            if (success) {
+                state.indicatorConfig = JSON.parse(JSON.stringify(DEFAULT_INDICATOR_CONFIG));
+                console.log("✅ Configuração padrão criada com sucesso!");
+            }
         }
 
         function loadMonthData() {
@@ -485,7 +617,7 @@
                         sittax: data.sittax || {},
                         openix: data.openix || {}
                     };
-                    console.log("✅ Dados do mês carregados:", state.monthData);
+                    console.log("✅ Dados do mês carregados");
                 } else {
                     state.monthData = { sittax: {}, openix: {} };
                     console.log("ℹ️ Nenhum dado encontrado para este mês");
@@ -523,32 +655,18 @@
             }
             
             // Esconder todos os conteúdos
-            document.getElementById('dashboard-content').classList.add('hidden');
-            document.getElementById('sittax-content').classList.add('hidden');
-            document.getElementById('openix-content').classList.add('hidden');
-            document.getElementById('comparativo-content').classList.add('hidden');
+            ['dashboard', 'sittax', 'openix', 'comparativo'].forEach(content => {
+                const el = document.getElementById(`${content}-content`);
+                if (el) el.classList.add('hidden');
+            });
             
             // Mostrar conteúdo ativo
-            switch(tab) {
-                case 'dashboard':
-                    document.getElementById('dashboard-content').classList.remove('hidden');
-                    renderDashboard();
-                    break;
-                case 'sittax':
-                    document.getElementById('sittax-content').classList.remove('hidden');
-                    setActiveSector(state.activeSector, 'sittax');
-                    break;
-                case 'openix':
-                    document.getElementById('openix-content').classList.remove('hidden');
-                    setActiveSector(state.activeSectorOpenix, 'openix');
-                    break;
-                case 'comparativo':
-                    document.getElementById('comparativo-content').classList.remove('hidden');
-                    renderComparativo();
-                    break;
+            const activeContent = document.getElementById(`${tab}-content`);
+            if (activeContent) {
+                activeContent.classList.remove('hidden');
             }
             
-            console.log(`📌 Tab ativa: ${tab}`);
+            updateCurrentView();
         }
 
         function setActiveSector(sector, product = 'sittax') {
@@ -561,7 +679,7 @@
             }
             
             // Atualizar botões de setor
-            document.querySelectorAll(`[class*="sector-tab-${product}"]`).forEach(btn => {
+            document.querySelectorAll(`.sector-tab`).forEach(btn => {
                 btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-md');
                 btn.classList.add('text-slate-500', 'hover:bg-slate-200/50');
             });
@@ -573,43 +691,43 @@
             }
             
             renderSectorTable(product, sector);
-            
-            console.log(`📌 Setor ${product} ativo: ${sector}`);
         }
 
         function toggleEditMode(product = 'sittax') {
             if (product === 'sittax') {
                 state.isEditMode = !state.isEditMode;
                 const btn = document.getElementById('edit-mode-btn');
-                if (state.isEditMode) {
-                    btn.classList.add('bg-amber-100', 'border-amber-300', 'text-amber-700');
-                    btn.classList.remove('bg-white', 'border-slate-200', 'text-slate-600');
-                    btn.textContent = 'Finalizar Edição';
-                } else {
-                    btn.classList.remove('bg-amber-100', 'border-amber-300', 'text-amber-700');
-                    btn.classList.add('bg-white', 'border-slate-200', 'text-slate-600');
-                    btn.textContent = 'Modo Estrutura';
+                if (btn) {
+                    if (state.isEditMode) {
+                        btn.classList.add('bg-amber-100', 'border-amber-300', 'text-amber-700');
+                        btn.classList.remove('bg-white', 'border-slate-200', 'text-slate-600');
+                        btn.textContent = 'Finalizar Edição';
+                    } else {
+                        btn.classList.remove('bg-amber-100', 'border-amber-300', 'text-amber-700');
+                        btn.classList.add('bg-white', 'border-slate-200', 'text-slate-600');
+                        btn.textContent = 'Modo Estrutura';
+                    }
                 }
             } else {
                 state.isEditModeOpenix = !state.isEditModeOpenix;
                 const btn = document.getElementById('openix-edit-mode-btn');
-                if (state.isEditModeOpenix) {
-                    btn.classList.add('bg-amber-100', 'border-amber-300', 'text-amber-700');
-                    btn.classList.remove('bg-white', 'border-slate-200', 'text-slate-600');
-                    btn.textContent = 'Finalizar Edição';
-                } else {
-                    btn.classList.remove('bg-amber-100', 'border-amber-300', 'text-amber-700');
-                    btn.classList.add('bg-white', 'border-slate-200', 'text-slate-600');
-                    btn.textContent = 'Modo Estrutura';
+                if (btn) {
+                    if (state.isEditModeOpenix) {
+                        btn.classList.add('bg-amber-100', 'border-amber-300', 'text-amber-700');
+                        btn.classList.remove('bg-white', 'border-slate-200', 'text-slate-600');
+                        btn.textContent = 'Finalizar Edição';
+                    } else {
+                        btn.classList.remove('bg-amber-100', 'border-amber-300', 'text-amber-700');
+                        btn.classList.add('bg-white', 'border-slate-200', 'text-slate-600');
+                        btn.textContent = 'Modo Estrutura';
+                    }
                 }
             }
+            
             const sector = product === 'sittax' ? state.activeSector : state.activeSectorOpenix;
             renderSectorTable(product, sector);
-            
-            console.log(`✏️ Modo edição ${product}: ${product === 'sittax' ? state.isEditMode : state.isEditModeOpenix}`);
         }
 
-        // ==================== RENDERIZAÇÃO ====================
         function updateCurrentView() {
             switch(state.activeTab) {
                 case 'dashboard':
@@ -627,16 +745,16 @@
             }
         }
 
+        // ==================== RENDERIZAÇÃO DASHBOARD ====================
         function renderDashboard() {
             const container = document.getElementById('dashboard-content');
+            if (!container) return;
             
-            // Calcular métricas
             const metrics = {
                 sittax: calculateProductMetrics('sittax'),
                 openix: calculateProductMetrics('openix')
             };
             
-            // Renderizar dashboard
             container.innerHTML = `
                 <!-- Resumo de Metas -->
                 <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
@@ -650,18 +768,215 @@
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-                        ${renderLossSummary('sittax', metrics.sittax)}
-                        ${renderLossSummary('openix', metrics.openix)}
+                        <div class="p-8 flex flex-col items-center text-center group hover:bg-slate-50 transition-colors">
+                            <span class="text-[11px] font-black text-amber-600 uppercase tracking-[0.25em] mb-3">SITTAX</span>
+                            <div class="text-2xl font-black mb-1 text-slate-800">
+                                R$ ${LOSS_TARGETS.sittax.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">TETO DE CHURN</div>
+                            
+                            <div class="mt-6 w-full flex flex-col items-center">
+                                <div class="flex justify-between w-full text-[9px] font-black text-slate-400 uppercase mb-1">
+                                    <span>CONSUMIDO</span>
+                                    <span class="text-emerald-500">
+                                        R$ ${metrics.sittax.mrrCancelado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                                <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full ${metrics.sittax.mrrCancelado > LOSS_TARGETS.sittax ? 'bg-rose-500' : 'bg-emerald-500'}" 
+                                         style="width: ${Math.min((metrics.sittax.mrrCancelado / LOSS_TARGETS.sittax) * 100, 100)}%"></div>
+                                </div>
+                                <div class="mt-2 text-xs text-emerald-600 font-bold">
+                                    ${((metrics.sittax.mrrCancelado / LOSS_TARGETS.sittax) * 100).toFixed(1)}% do limite
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-8 flex flex-col items-center text-center group hover:bg-slate-50 transition-colors">
+                            <span class="text-[11px] font-black text-emerald-600 uppercase tracking-[0.25em] mb-3">OPENIX</span>
+                            <div class="text-2xl font-black mb-1 text-slate-800">
+                                R$ ${LOSS_TARGETS.openix.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">TETO DE CHURN</div>
+                            
+                            <div class="mt-6 w-full flex flex-col items-center">
+                                <div class="flex justify-between w-full text-[9px] font-black text-slate-400 uppercase mb-1">
+                                    <span>CONSUMIDO</span>
+                                    <span class="text-emerald-500">
+                                        R$ ${metrics.openix.mrrCancelado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                                <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full ${metrics.openix.mrrCancelado > LOSS_TARGETS.openix ? 'bg-rose-500' : 'bg-emerald-500'}" 
+                                         style="width: ${Math.min((metrics.openix.mrrCancelado / LOSS_TARGETS.openix) * 100, 100)}%"></div>
+                                </div>
+                                <div class="mt-2 text-xs text-emerald-600 font-bold">
+                                    ${((metrics.openix.mrrCancelado / LOSS_TARGETS.openix) * 100).toFixed(1)}% do limite
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Sittax Section -->
-                ${renderProductSection('Sittax', 'sittax', metrics.sittax, 'bg-amber-500', 'fa-rocket')}
+                <div class="space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white shadow-lg">
+                                <i class="fas fa-rocket"></i>
+                            </div>
+                            <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">SITTAX</h2>
+                        </div>
+                        <div class="bg-white px-6 py-4 rounded-2xl border border-slate-100 shadow-sm min-w-[320px]">
+                            <div class="flex justify-between items-end mb-2">
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">LIMITE MENSAL DE PERDA</p>
+                                    <p class="text-lg font-bold text-slate-800">
+                                        ${((metrics.sittax.mrrCancelado / LOSS_TARGETS.sittax) * 100).toFixed(1)}% <span class="text-slate-400 text-sm font-normal">do permitido</span>
+                                    </p>
+                                </div>
+                                <div class="text-[10px] font-black uppercase px-2 py-1 rounded-md ${metrics.sittax.mrrCancelado > LOSS_TARGETS.sittax ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}">
+                                    ${metrics.sittax.mrrCancelado > LOSS_TARGETS.sittax ? 'Crítico' : 'Saudável'}
+                                </div>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                <div class="h-full transition-all duration-700 ease-out ${metrics.sittax.mrrCancelado > LOSS_TARGETS.sittax ? 'bg-rose-500' : 'bg-emerald-500'}" 
+                                     style="width: ${Math.min((metrics.sittax.mrrCancelado / LOSS_TARGETS.sittax) * 100, 100)}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">CLIENTES ATIVOS</p>
+                                <i class="fas fa-users text-slate-200 group-hover:text-indigo-400 text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800">${metrics.sittax.ativos.toLocaleString('pt-BR')}</h3>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">SOLICIT. CANCELAMENTO</p>
+                                <i class="fas fa-file-invoice text-slate-200 group-hover:text-indigo-400 text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800">${metrics.sittax.solicitacoes}</h3>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">CANCELADOS</p>
+                                <i class="fas fa-user-minus text-slate-200 group-hover:text-indigo-400 text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800">${metrics.sittax.cancelados}</h3>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border ${metrics.sittax.mrrCancelado > LOSS_TARGETS.sittax ? 'border-rose-200 bg-rose-50/30' : 'border-slate-100'} flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest ${metrics.sittax.mrrCancelado > LOSS_TARGETS.sittax ? 'text-rose-500' : 'text-slate-400'}">MRR PERDA TOTAL</p>
+                                <i class="fas fa-money-bill-wave ${metrics.sittax.mrrCancelado > LOSS_TARGETS.sittax ? 'text-rose-300' : 'text-slate-200 group-hover:text-indigo-400'} text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold ${metrics.sittax.mrrCancelado > LOSS_TARGETS.sittax ? 'text-rose-700' : 'text-slate-800'}">R$ ${metrics.sittax.mrrCancelado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">MÉDIA CSAT</p>
+                                <i class="fas fa-smile text-slate-200 group-hover:text-indigo-400 text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800">${metrics.sittax.csatAvg > 0 ? metrics.sittax.csatAvg.toFixed(1) + '%' : '-'}</h3>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">REVERSÕES</p>
+                                <i class="fas fa-undo text-slate-200 group-hover:text-indigo-400 text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800">${metrics.sittax.revertidos}</h3>
+                        </div>
+                    </div>
+                </div>
                 
                 <hr class="border-slate-200" />
                 
                 <!-- Openix Section -->
-                ${renderProductSection('Openix', 'openix', metrics.openix, 'bg-emerald-600', 'fa-globe')}
+                <div class="space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">OPENIX</h2>
+                        </div>
+                        <div class="bg-white px-6 py-4 rounded-2xl border border-slate-100 shadow-sm min-w-[320px]">
+                            <div class="flex justify-between items-end mb-2">
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">LIMITE MENSAL DE PERDA</p>
+                                    <p class="text-lg font-bold text-slate-800">
+                                        ${((metrics.openix.mrrCancelado / LOSS_TARGETS.openix) * 100).toFixed(1)}% <span class="text-slate-400 text-sm font-normal">do permitido</span>
+                                    </p>
+                                </div>
+                                <div class="text-[10px] font-black uppercase px-2 py-1 rounded-md ${metrics.openix.mrrCancelado > LOSS_TARGETS.openix ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}">
+                                    ${metrics.openix.mrrCancelado > LOSS_TARGETS.openix ? 'Crítico' : 'Saudável'}
+                                </div>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                <div class="h-full transition-all duration-700 ease-out ${metrics.openix.mrrCancelado > LOSS_TARGETS.openix ? 'bg-rose-500' : 'bg-emerald-500'}" 
+                                     style="width: ${Math.min((metrics.openix.mrrCancelado / LOSS_TARGETS.openix) * 100, 100)}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">CLIENTES ATIVOS</p>
+                                <i class="fas fa-users text-slate-200 group-hover:text-indigo-400 text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800">${metrics.openix.ativos.toLocaleString('pt-BR')}</h3>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">SOLICIT. CANCELAMENTO</p>
+                                <i class="fas fa-file-invoice text-slate-200 group-hover:text-indigo-400 text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800">${metrics.openix.solicitacoes}</h3>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">CANCELADOS</p>
+                                <i class="fas fa-user-minus text-slate-200 group-hover:text-indigo-400 text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800">${metrics.openix.cancelados}</h3>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border ${metrics.openix.mrrCancelado > LOSS_TARGETS.openix ? 'border-rose-200 bg-rose-50/30' : 'border-slate-100'} flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest ${metrics.openix.mrrCancelado > LOSS_TARGETS.openix ? 'text-rose-500' : 'text-slate-400'}">MRR PERDA TOTAL</p>
+                                <i class="fas fa-money-bill-wave ${metrics.openix.mrrCancelado > LOSS_TARGETS.openix ? 'text-rose-300' : 'text-slate-200 group-hover:text-indigo-400'} text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold ${metrics.openix.mrrCancelado > LOSS_TARGETS.openix ? 'text-rose-700' : 'text-slate-800'}">R$ ${metrics.openix.mrrCancelado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">MÉDIA CSAT</p>
+                                <i class="fas fa-smile text-slate-200 group-hover:text-indigo-400 text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800">${metrics.openix.csatAvg > 0 ? metrics.openix.csatAvg.toFixed(1) + '%' : '-'}</h3>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-slate-300 transition-all group">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">REVERSÕES</p>
+                                <i class="fas fa-undo text-slate-200 group-hover:text-indigo-400 text-xs transition-colors"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800">${metrics.openix.revertidos}</h3>
+                        </div>
+                    </div>
+                </div>
             `;
         }
 
@@ -679,125 +994,58 @@
             const productData = state.monthData[product] || {};
             Object.values(productData).forEach(sectorData => {
                 Object.values(sectorData || {}).forEach(dayData => {
-                    metrics.ativos += (dayData['Quantidades de Clientes'] || 0);
-                    metrics.solicitacoes += (dayData['Solicitações de Cancelamento'] || 0);
-                    metrics.cancelados += (dayData['Cancelados'] || dayData['Cancelamentos'] || 0);
-                    metrics.mrrCancelado += (dayData['MRR Cancelado (R$)'] || 0);
-                    metrics.revertidos += (dayData['Reversão de Cancelamentos'] || dayData['Revertidos'] || 0);
+                    // Soma para métricas gerais
+                    metrics.ativos += (parseFloat(dayData['Quantidades de Clientes']) || 0);
+                    metrics.solicitacoes += (parseFloat(dayData['Solicitações de Cancelamento']) || 0);
+                    metrics.cancelados += (parseFloat(dayData['Cancelamentos']) || 0);
+                    metrics.revertidos += (parseFloat(dayData['Reversão de Cancelamentos']) || 0);
                     
-                    if (dayData['CSAT']) {
-                        metrics.csatAvg += dayData['CSAT'];
-                        metrics.csatCount += 1;
+                    // CSAT
+                    const csatValue = parseFloat(dayData['CSAT']);
+                    if (!isNaN(csatValue)) {
+                        metrics.csatAvg += csatValue;
+                        metrics.csatCount++;
                     }
+                    
+                    // MRR Cancelado (procurar em vários campos possíveis)
+                    const mrrValue = parseFloat(dayData['MBR Cancelado (R$)']) || 
+                                    parseFloat(dayData['MBR Cancelado Automático (R$)']) || 0;
+                    metrics.mrrCancelado += mrrValue;
                 });
             });
+
+            // Calcular média do CSAT
+            if (metrics.csatCount > 0) {
+                metrics.csatAvg = metrics.csatAvg / metrics.csatCount;
+            }
 
             return metrics;
         }
 
-        function renderLossSummary(product, metrics) {
-            const total = metrics.mrrCancelado || 0;
-            const target = LOSS_TARGETS[product] || 1;
-            const isOver = total > target;
-            const percentage = Math.min((total / target) * 100, 100);
-
-            return `
-                <div class="p-8 flex flex-col items-center text-center group hover:bg-slate-50 transition-colors">
-                    <span class="text-[11px] font-black ${product === 'sittax' ? 'text-amber-600' : 'text-emerald-600'} uppercase tracking-[0.25em] mb-3">${product.toUpperCase()}</span>
-                    <div class="text-2xl font-black mb-1 ${isOver ? 'text-rose-600' : 'text-slate-800'}">
-                        R$ ${target.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </div>
-                    <div class="text-[10px] font-bold text-slate-400 uppercase">Teto de Churn</div>
-                    
-                    <div class="mt-6 w-full flex flex-col items-center">
-                        <div class="flex justify-between w-full text-[9px] font-black text-slate-400 uppercase mb-1">
-                            <span>Consumido</span>
-                            <span class="${isOver ? 'text-rose-500' : 'text-emerald-500'}">
-                                R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </span>
-                        </div>
-                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div class="h-full ${isOver ? 'bg-rose-500' : 'bg-emerald-500'}" 
-                                 style="width: ${percentage}%"></div>
-                        </div>
-                        <div class="mt-2 text-xs ${isOver ? 'text-rose-600' : 'text-emerald-600'} font-bold">
-                            ${percentage.toFixed(1)}% do limite
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderProductSection(name, productId, data, primaryColor, icon) {
-            const totalLoss = data.mrrCancelado || 0;
-            const target = LOSS_TARGETS[productId] || 1;
-            const percentage = target > 0 ? (totalLoss / target) * 100 : 0;
-            const isOverTarget = totalLoss > target;
-            const csat = data.csatCount > 0 ? (data.csatAvg / data.csatCount).toFixed(1) : '-';
-
-            const cards = [
-                { label: 'Clientes Ativos', value: data.ativos.toLocaleString('pt-BR'), icon: 'fa-users' },
-                { label: 'Solicit. Cancelamento', value: data.solicitacoes, icon: 'fa-file-invoice' },
-                { label: 'Cancelados', value: data.cancelados, icon: 'fa-user-minus' },
-                { label: 'MRR Perda Total', value: `R$ ${totalLoss.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
-                  icon: 'fa-money-bill-wave', highlight: isOverTarget },
-                { label: 'Média CSAT', value: `${csat}${csat !== '-' ? '%' : ''}`, icon: 'fa-smile' },
-                { label: 'Reversões', value: data.revertidos, icon: 'fa-undo' },
-            ];
-
-            return `
-                <div class="space-y-6">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 ${primaryColor} rounded-xl flex items-center justify-center text-white shadow-lg">
-                                <i class="fas ${icon}"></i>
-                            </div>
-                            <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">${name}</h2>
-                        </div>
-                        <div class="bg-white px-6 py-4 rounded-2xl border border-slate-100 shadow-sm min-w-[320px]">
-                            <div class="flex justify-between items-end mb-2">
-                                <div>
-                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Limite Mensal de Perda</p>
-                                    <p class="text-lg font-bold text-slate-800">
-                                        ${percentage.toFixed(1)}% <span class="text-slate-400 text-sm font-normal">do permitido</span>
-                                    </p>
-                                </div>
-                                <div class="text-[10px] font-black uppercase px-2 py-1 rounded-md ${isOverTarget ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}">
-                                    ${isOverTarget ? 'Crítico' : 'Saudável'}
-                                </div>
-                            </div>
-                            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                <div class="h-full transition-all duration-700 ease-out ${isOverTarget ? 'bg-rose-500' : 'bg-emerald-500'}" 
-                                     style="width: ${Math.min(percentage, 100)}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                        ${cards.map(card => `
-                            <div class="bg-white p-5 rounded-2xl shadow-sm border ${card.highlight ? 'border-rose-200 bg-rose-50/30' : 'border-slate-100'} flex flex-col justify-between hover:border-slate-300 transition-all group">
-                                <div class="flex items-center justify-between mb-3">
-                                    <p class="text-[9px] font-black uppercase tracking-widest ${card.highlight ? 'text-rose-500' : 'text-slate-400'}">${card.label}</p>
-                                    <i class="fas ${card.icon} ${card.highlight ? 'text-rose-300' : 'text-slate-200 group-hover:text-indigo-400'} text-xs transition-colors"></i>
-                                </div>
-                                <h3 class="text-xl font-bold ${card.highlight ? 'text-rose-700' : 'text-slate-800'}">${card.value}</h3>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
+        // ==================== RENDERIZAÇÃO TABELAS ====================
         function renderSectorTable(product, sector) {
             const container = product === 'sittax' ? 
                 document.getElementById('sittax-table') : 
                 document.getElementById('openix-table');
             
+            if (!container) return;
+            
             const isEditMode = product === 'sittax' ? state.isEditMode : state.isEditModeOpenix;
             const indicators = state.indicatorConfig[product]?.[sector] || [];
             const sectorData = state.monthData[product]?.[sector] || {};
             
-            // Gerar dias do mês
+            if (indicators.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 text-center w-full">
+                        <i class="fas fa-table text-4xl text-slate-300 mb-4"></i>
+                        <h3 class="text-lg font-bold text-slate-700 mb-2">Nenhum indicador configurado</h3>
+                        <p class="text-slate-500 mb-4">Os indicadores serão criados automaticamente</p>
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                    </div>
+                `;
+                return;
+            }
+            
             const [year, month] = state.currentMonth.split('-').map(Number);
             const daysInMonth = new Date(year, month, 0).getDate();
             const days = Array.from({ length: daysInMonth }, (_, i) => {
@@ -867,108 +1115,23 @@
             `;
         }
 
-        function renderComparativo() {
-            const container = document.getElementById('comparativo-content');
-            
-            let content = '<div class="grid grid-cols-1 gap-8">';
-            
-            SECTORS.forEach(sector => {
-                const indicators = getUniqueIndicatorsForSector(sector);
-                if (indicators.length === 0) return;
-                
-                content += `
-                    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div class="bg-slate-50 p-6 border-b border-slate-100 flex items-center justify-between">
-                            <h3 class="text-lg font-bold text-slate-800 capitalize flex items-center gap-3">
-                                <i class="fas fa-layer-group text-indigo-500"></i>
-                                ${sector}
-                            </h3>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                Comparação Dinâmica de KPIs
-                            </span>
-                        </div>
-                        <div class="p-0 overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="bg-slate-50/50 text-slate-400 text-[10px] uppercase font-black tracking-[0.15em] border-b border-slate-100">
-                                        <th class="p-4 text-left">Indicador / Métrica</th>
-                                        <th class="p-4 text-center text-amber-600">Sittax</th>
-                                        <th class="p-4 text-center text-emerald-600">Openix</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${indicators.map(ind => {
-                                        const valS = getLatestValue('sittax', sector, ind.name);
-                                        const valO = getLatestValue('openix', sector, ind.name);
-                                        const isPercentage = ind.type === 'percentual';
-                                        const isMoeda = ind.type === 'moeda';
-
-                                        const format = (v) => {
-                                            if (v === '-' || v === undefined) return '-';
-                                            if (isPercentage) return `${v}%`;
-                                            if (isMoeda) return `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-                                            return v;
-                                        };
-
-                                        return `
-                                            <tr class="border-b border-slate-50 last:border-none hover:bg-slate-50/50 transition">
-                                                <td class="p-4 text-slate-600 font-bold">${ind.name}</td>
-                                                <td class="p-4 text-center text-slate-900 font-black">${format(valS)}</td>
-                                                <td class="p-4 text-center text-slate-900 font-black">${format(valO)}</td>
-                                            </tr>
-                                        `;
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            content += '</div>';
-            container.innerHTML = content;
-        }
-
-        function getUniqueIndicatorsForSector(sector) {
-            const names = new Set();
-            const typeMap = new Map();
-            
-            PRODUCTS.forEach(p => {
-                (state.indicatorConfig[p]?.[sector] || []).forEach(ind => {
-                    names.add(ind.name);
-                    typeMap.set(ind.name, ind.type);
-                });
-            });
-            
-            return Array.from(names).map(name => ({ name, type: typeMap.get(name) || 'numerico' }));
-        }
-
-        function getLatestValue(product, sector, indicatorName) {
-            const sData = state.monthData[product]?.[sector];
-            if (!sData) return '-';
-            const dates = Object.keys(sData).sort();
-            if (dates.length === 0) return '-';
-            
-            // Buscar valor mais recente
-            for (let i = dates.length - 1; i >= 0; i--) {
-                const val = sData[dates[i]][indicatorName];
-                if (val !== undefined) return val;
-            }
-            
-            return '-';
-        }
-
-        // ==================== FUNÇÕES DE EDIÇÃO ====================
         async function updateCellValue(product, sector, date, indicatorName, value) {
             const numValue = parseFloat(value);
-            if (isNaN(numValue)) return;
             
             const dateObj = new Date(date + 'T12:00:00');
             const dateMonthKey = `${dateObj.getFullYear()}-${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
             
-            const success = await updateData(`frameworkGestao/${dateMonthKey}/${product}/${sector}/${date}`, { 
-                [indicatorName]: numValue 
-            });
+            let dataToUpdate = {};
+            if (isNaN(numValue)) {
+                // Remover o campo se estiver vazio
+                const currentData = state.monthData[product]?.[sector]?.[date] || {};
+                delete currentData[indicatorName];
+                dataToUpdate = currentData;
+            } else {
+                dataToUpdate = { [indicatorName]: numValue };
+            }
+            
+            const success = await updateData(`frameworkGestao/${dateMonthKey}/${product}/${sector}/${date}`, dataToUpdate);
             
             if (success) {
                 // Atualizar estado local
@@ -978,8 +1141,14 @@
                 if (!state.monthData[product][sector][date]) {
                     state.monthData[product][sector][date] = {};
                 }
-                state.monthData[product][sector][date][indicatorName] = numValue;
                 
+                if (isNaN(numValue)) {
+                    delete state.monthData[product][sector][date][indicatorName];
+                } else {
+                    state.monthData[product][sector][date][indicatorName] = numValue;
+                }
+                
+                updateCurrentView();
                 showToast("Valor atualizado com sucesso", "success");
             }
         }
@@ -1028,12 +1197,111 @@
             }
         }
 
+        // ==================== RENDERIZAÇÃO COMPARATIVO ====================
+        function renderComparativo() {
+            const container = document.getElementById('comparativo-content');
+            if (!container) return;
+            
+            let content = '<div class="grid grid-cols-1 gap-8">';
+            
+            SECTORS.forEach(sector => {
+                const indicators = getUniqueIndicatorsForSector(sector);
+                if (indicators.length === 0) return;
+                
+                content += `
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="bg-slate-50 p-6 border-b border-slate-100 flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-slate-800 capitalize flex items-center gap-3">
+                                <i class="fas fa-layer-group text-indigo-500"></i>
+                                ${sector.charAt(0).toUpperCase() + sector.slice(1)}
+                            </h3>
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                Comparação Dinâmica de KPIs
+                            </span>
+                        </div>
+                        <div class="p-0 overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50/50 text-slate-400 text-[10px] uppercase font-black tracking-[0.15em] border-b border-slate-100">
+                                        <th class="p-4 text-left">Indicador / Métrica</th>
+                                        <th class="p-4 text-center text-amber-600">Sittax</th>
+                                        <th class="p-4 text-center text-emerald-600">Openix</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${indicators.map(ind => {
+                                        const valS = getLatestValue('sittax', sector, ind.name);
+                                        const valO = getLatestValue('openix', sector, ind.name);
+                                        const isPercentage = ind.type === 'percentual';
+
+                                        const format = (v) => {
+                                            if (v === '-' || v === undefined) return '-';
+                                            if (isPercentage) return `${v}%`;
+                                            return v;
+                                        };
+
+                                        return `
+                                            <tr class="border-b border-slate-50 last:border-none hover:bg-slate-50/50 transition">
+                                                <td class="p-4 text-slate-600 font-bold">${ind.name}</td>
+                                                <td class="p-4 text-center text-slate-900 font-bold ${valS > valO ? 'text-amber-600' : ''}">
+                                                    ${format(valS)}
+                                                </td>
+                                                <td class="p-4 text-center text-slate-900 font-bold ${valO > valS ? 'text-emerald-600' : ''}">
+                                                    ${format(valO)}
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            content += '</div>';
+            container.innerHTML = content;
+        }
+
+        function getUniqueIndicatorsForSector(sector) {
+            const names = new Set();
+            const typeMap = new Map();
+            
+            PRODUCTS.forEach(p => {
+                (state.indicatorConfig[p]?.[sector] || []).forEach(ind => {
+                    names.add(ind.name);
+                    typeMap.set(ind.name, ind.type);
+                });
+            });
+            
+            return Array.from(names).map(name => ({ name, type: typeMap.get(name) || 'numerico' }));
+        }
+
+        function getLatestValue(product, sector, indicatorName) {
+            const sData = state.monthData[product]?.[sector];
+            if (!sData) return '-';
+            
+            // Procurar valores em todos os dias
+            let latestValue = '-';
+            Object.values(sData).forEach(dayData => {
+                if (dayData[indicatorName] !== undefined) {
+                    latestValue = dayData[indicatorName];
+                }
+            });
+            
+            return latestValue;
+        }
+
         // ==================== MODAL ====================
         function openModal() {
+            // Resetar modal data
+            const now = new Date();
             state.modalData = {
                 product: 'sittax',
                 sector: 'retencao',
-                date: new Date().toISOString().split('T')[0],
+                year: now.getFullYear(),
+                month: now.getMonth() + 1,
+                date: now.toISOString().split('T')[0],
                 values: {}
             };
             
@@ -1051,6 +1319,35 @@
             const container = document.getElementById('modal-form');
             const indicators = state.indicatorConfig[state.modalData.product]?.[state.modalData.sector] || [];
             
+            // Gerar lista de anos
+            const currentYear = new Date().getFullYear();
+            const years = Array.from({ length: 3 }, (_, i) => currentYear - 1 + i);
+            
+            // Gerar lista de meses
+            const months = [
+                { value: 1, name: 'Janeiro' },
+                { value: 2, name: 'Fevereiro' },
+                { value: 3, name: 'Março' },
+                { value: 4, name: 'Abril' },
+                { value: 5, name: 'Maio' },
+                { value: 6, name: 'Junho' },
+                { value: 7, name: 'Julho' },
+                { value: 8, name: 'Agosto' },
+                { value: 9, name: 'Setembro' },
+                { value: 10, name: 'Outubro' },
+                { value: 11, name: 'Novembro' },
+                { value: 12, name: 'Dezembro' }
+            ];
+            
+            // Gerar dias do mês selecionado
+            const daysInMonth = new Date(state.modalData.year, state.modalData.month, 0).getDate();
+            const days = Array.from({ length: daysInMonth }, (_, i) => {
+                const day = i + 1;
+                const dateStr = `${state.modalData.year}-${state.modalData.month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                const hasData = state.monthData[state.modalData.product]?.[state.modalData.sector]?.[dateStr] ? true : false;
+                return { day, dateStr, hasData };
+            });
+
             container.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                     <div class="space-y-2">
@@ -1059,7 +1356,9 @@
                             <select id="modal-product" onchange="updateModalProduct(this.value)" 
                                 class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500/20">
                                 ${PRODUCTS.map(p => `
-                                    <option value="${p}" ${p === state.modalData.product ? 'selected' : ''}>${p.toUpperCase()}</option>
+                                    <option value="${p}" ${p === state.modalData.product ? 'selected' : ''}>
+                                        ${p === 'sittax' ? 'SITTAX' : 'OPENIX'}
+                                    </option>
                                 `).join('')}
                             </select>
                             <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
@@ -1071,42 +1370,109 @@
                             <select id="modal-sector" onchange="updateModalSector(this.value)" 
                                 class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500/20">
                                 ${SECTORS.map(s => `
-                                    <option value="${s}" ${s === state.modalData.sector ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                                    <option value="${s}" ${s === state.modalData.sector ? 'selected' : ''}>
+                                        ${s.charAt(0).toUpperCase() + s.slice(1)}
+                                    </option>
+                                `).join('')}
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Ano</label>
+                        <div class="relative">
+                            <select id="modal-year" onchange="updateModalYear(this.value)" 
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500/20">
+                                ${years.map(y => `
+                                    <option value="${y}" ${y === state.modalData.year ? 'selected' : ''}>
+                                        ${y}
+                                    </option>
                                 `).join('')}
                             </select>
                             <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
                         </div>
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Data</label>
-                        <input type="date" id="modal-date" value="${state.modalData.date}" onchange="updateModalDate(this.value)"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                        <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Mês</label>
+                        <div class="relative">
+                            <select id="modal-month" onchange="updateModalMonth(this.value)" 
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500/20">
+                                ${months.map(m => `
+                                    <option value="${m.value}" ${m.value === state.modalData.month ? 'selected' : ''}>
+                                        ${m.name}
+                                    </option>
+                                `).join('')}
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6" id="modal-indicators">
-                    ${indicators.map(ind => `
-                        <div class="space-y-2">
-                            <label class="text-sm font-bold text-slate-600">${ind.name}</label>
-                            <div class="relative">
-                                <input type="number" id="indicator-${ind.id}" 
-                                    placeholder="0" 
-                                    step="0.01"
-                                    onchange="updateModalValue('${ind.name}', this.value)"
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-4 text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300" />
-                                ${ind.type === 'moeda' ? `
-                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">BRL</span>
-                                ` : ''}
+                <div class="mb-10">
+                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4 block">Selecione o Dia</label>
+                    <div class="month-grid">
+                        ${days.map(d => `
+                            <div class="day-cell ${d.dateStr === state.modalData.date ? 'selected' : ''} ${d.hasData ? 'has-data' : ''}" 
+                                 onclick="selectModalDate('${d.dateStr}')">
+                                ${d.day}
+                                ${d.hasData ? '<i class="fas fa-check text-[8px] block mt-1"></i>' : ''}
                             </div>
-                        </div>
-                    `).join('')}
+                        `).join('')}
+                    </div>
                 </div>
+
+                ${indicators.length > 0 ? `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6" id="modal-indicators">
+                        ${indicators.map(ind => `
+                            <div class="space-y-2">
+                                <label class="text-sm font-bold text-slate-600">${ind.name}</label>
+                                <div class="relative">
+                                    <input type="number" 
+                                        id="indicator-${ind.id}" 
+                                        placeholder="0" 
+                                        step="0.01"
+                                        oninput="updateModalValue('${ind.name}', this.value)"
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-4 text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300" />
+                                    ${ind.type === 'percentual' ? `
+                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">%</span>
+                                    ` : ind.type === 'monetario' ? `
+                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest">R$</span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : `
+                    <div class="text-center py-8">
+                        <i class="fas fa-exclamation-triangle text-4xl text-amber-500 mb-4"></i>
+                        <h3 class="text-lg font-bold text-slate-700 mb-2">Nenhum indicador configurado</h3>
+                        <p class="text-slate-500">Configure indicadores para este setor primeiro.</p>
+                    </div>
+                `}
             `;
+            
+            // Preencher valores existentes se houver
+            if (state.modalData.date) {
+                const dateData = state.monthData[state.modalData.product]?.[state.modalData.sector]?.[state.modalData.date];
+                if (dateData) {
+                    indicators.forEach(ind => {
+                        if (dateData[ind.name] !== undefined) {
+                            const input = document.getElementById(`indicator-${ind.id}`);
+                            if (input) {
+                                input.value = dateData[ind.name];
+                                state.modalData.values[ind.name] = dateData[ind.name];
+                            }
+                        }
+                    });
+                }
+            }
         }
 
         function updateModalProduct(product) {
             state.modalData.product = product;
-            state.modalData.sector = 'retencao'; // Reset para setor padrão
             state.modalData.values = {};
             renderModalForm();
         }
@@ -1117,56 +1483,94 @@
             renderModalForm();
         }
 
-        function updateModalDate(date) {
+        function updateModalYear(year) {
+            state.modalData.year = parseInt(year);
+            // Atualizar data para o primeiro dia do novo mês/ano
+            state.modalData.date = `${year}-${state.modalData.month.toString().padStart(2, '0')}-01`;
+            state.modalData.values = {};
+            renderModalForm();
+        }
+
+        function updateModalMonth(month) {
+            state.modalData.month = parseInt(month);
+            // Atualizar data para o primeiro dia do novo mês/ano
+            state.modalData.date = `${state.modalData.year}-${month.toString().padStart(2, '0')}-01`;
+            state.modalData.values = {};
+            renderModalForm();
+        }
+
+        function selectModalDate(date) {
             state.modalData.date = date;
+            state.modalData.values = {};
+            renderModalForm();
         }
 
         function updateModalValue(name, value) {
-            state.modalData.values[name] = parseFloat(value) || 0;
+            const numValue = parseFloat(value);
+            if (!isNaN(numValue)) {
+                state.modalData.values[name] = numValue;
+            } else {
+                delete state.modalData.values[name];
+            }
         }
 
         async function saveData() {
             try {
                 const indicators = state.indicatorConfig[state.modalData.product]?.[state.modalData.sector] || [];
                 if (indicators.length === 0) {
-                    showToast("Adicione indicadores a este setor primeiro", "error");
+                    showToast("Configure indicadores para este setor primeiro", "error");
                     return;
                 }
                 
-                // Validar que pelo menos um valor foi preenchido
-                const hasValues = Object.keys(state.modalData.values).length > 0;
-                if (!hasValues) {
+                if (Object.keys(state.modalData.values).length === 0) {
                     showToast("Preencha pelo menos um valor", "error");
                     return;
                 }
                 
-                const dateObj = new Date(state.modalData.date + 'T12:00:00');
-                const dateMonthKey = `${dateObj.getFullYear()}-${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
+                const dateMonthKey = `${state.modalData.year}-${state.modalData.month.toString().padStart(2, '0')}`;
+                
+                // Obter dados atuais para não sobrescrever
+                const currentData = state.monthData[state.modalData.product]?.[state.modalData.sector]?.[state.modalData.date] || {};
+                
+                // Combinar dados
+                const dataToSave = { ...currentData, ...state.modalData.values };
                 
                 const success = await updateData(
                     `frameworkGestao/${dateMonthKey}/${state.modalData.product}/${state.modalData.sector}/${state.modalData.date}`, 
-                    state.modalData.values
+                    dataToSave
                 );
                 
                 if (success) {
+                    // Atualizar estado local
+                    if (!state.monthData[state.modalData.product]) {
+                        state.monthData[state.modalData.product] = {};
+                    }
+                    if (!state.monthData[state.modalData.product][state.modalData.sector]) {
+                        state.monthData[state.modalData.product][state.modalData.sector] = {};
+                    }
+                    state.monthData[state.modalData.product][state.modalData.sector][state.modalData.date] = dataToSave;
+                    
+                    // Atualizar o seletor de mês principal se for diferente
                     if (dateMonthKey !== state.currentMonth) {
                         state.currentMonth = dateMonthKey;
                         document.getElementById('month-selector').value = dateMonthKey;
                         loadMonthData();
+                        showToast(`Dados salvos para ${dateMonthKey}. Mês alterado automaticamente.`, 'success');
                     } else {
-                        // Atualizar dados locais
-                        if (!state.monthData[state.modalData.product][state.modalData.sector]) {
-                            state.monthData[state.modalData.product][state.modalData.sector] = {};
-                        }
-                        state.monthData[state.modalData.product][state.modalData.sector][state.modalData.date] = {
-                            ...state.monthData[state.modalData.product][state.modalData.sector][state.modalData.date],
-                            ...state.modalData.values
-                        };
                         updateCurrentView();
+                        showToast('Dados salvos com sucesso!', 'success');
                     }
                     
                     closeModal();
-                    showToast('Dados salvos com sucesso!', 'success');
+                    
+                    // Navegar para a tabela do produto salvo
+                    if (state.modalData.product === 'sittax') {
+                        setActiveTab('sittax');
+                        setActiveSector(state.modalData.sector, 'sittax');
+                    } else {
+                        setActiveTab('openix');
+                        setActiveSector(state.modalData.sector, 'openix');
+                    }
                 }
             } catch (error) {
                 console.error("Erro ao salvar:", error);
@@ -1198,9 +1602,14 @@
         }
 
         // ==================== INICIALIZAÇÃO ====================
-        document.addEventListener('DOMContentLoaded', initializeApp);
-        
-        // Expor funções globalmente para uso nos eventos onclick
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                initializeApp();
+                setActiveTab('dashboard');
+            }, 100);
+        });
+
+        // Expor funções globalmente
         window.setActiveTab = setActiveTab;
         window.setActiveSector = setActiveSector;
         window.toggleEditMode = toggleEditMode;
@@ -1212,7 +1621,9 @@
         window.deleteIndicator = deleteIndicator;
         window.updateModalProduct = updateModalProduct;
         window.updateModalSector = updateModalSector;
-        window.updateModalDate = updateModalDate;
+        window.updateModalYear = updateModalYear;
+        window.updateModalMonth = updateModalMonth;
+        window.selectModalDate = selectModalDate;
         window.updateModalValue = updateModalValue;
     </script>
 </body>
